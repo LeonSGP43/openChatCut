@@ -21,8 +21,10 @@ import { decodeAudioToFloat32 } from "@/lib/media/audio";
 import { buildCaptionChunks } from "@/lib/transcription/caption";
 import { Spinner } from "@/components/ui/spinner";
 import { Label } from "@/components/ui/label";
+import { useI18n } from "@/components/providers/i18n-provider";
 
 export function Captions() {
+	const { t } = useI18n();
 	const [selectedLanguage, setSelectedLanguage] =
 		useState<TranscriptionLanguage>("auto");
 	const [isProcessing, setIsProcessing] = useState(false);
@@ -33,9 +35,13 @@ export function Captions() {
 
 	const handleProgress = (progress: TranscriptionProgress) => {
 		if (progress.status === "loading-model") {
-			setProcessingStep(`Loading model ${Math.round(progress.progress)}%`);
+			setProcessingStep(
+				t("captionsView.stepLoadingModel", {
+					progress: Math.round(progress.progress),
+				}),
+			);
 		} else if (progress.status === "transcribing") {
-			setProcessingStep("Transcribing...");
+			setProcessingStep(t("captionsView.stepTranscribing"));
 		}
 	};
 
@@ -43,7 +49,7 @@ export function Captions() {
 		try {
 			setIsProcessing(true);
 			setError(null);
-			setProcessingStep("Extracting audio...");
+			setProcessingStep(t("captionsView.stepExtractingAudio"));
 
 			const audioBlob = await extractTimelineAudio({
 				tracks: editor.timeline.getTracks(),
@@ -51,7 +57,7 @@ export function Captions() {
 				totalDuration: editor.timeline.getTotalDuration(),
 			});
 
-			setProcessingStep("Preparing audio...");
+			setProcessingStep(t("captionsView.stepPreparingAudio"));
 			const { samples } = await decodeAudioToFloat32({ audioBlob });
 
 			const result = await transcriptionService.transcribe({
@@ -60,7 +66,7 @@ export function Captions() {
 				onProgress: handleProgress,
 			});
 
-			setProcessingStep("Generating captions...");
+			setProcessingStep(t("captionsView.stepGeneratingCaptions"));
 			const captionChunks = buildCaptionChunks({ segments: result.segments });
 
 			const captionTrackId = editor.timeline.addTrack({
@@ -86,7 +92,9 @@ export function Captions() {
 		} catch (error) {
 			console.error("Transcription failed:", error);
 			setError(
-				error instanceof Error ? error.message : "An unexpected error occurred",
+				error instanceof Error
+					? error.message
+					: t("captionsView.unexpectedError"),
 			);
 		} finally {
 			setIsProcessing(false);
@@ -108,18 +116,18 @@ export function Captions() {
 	};
 
 	return (
-		<PanelView title="Captions" ref={containerRef}>
+		<PanelView title={t("captionsView.panelTitle")} ref={containerRef}>
 			<div className="flex flex-col gap-3">
-				<Label>Language</Label>
+				<Label>{t("captionsView.language")}</Label>
 				<Select
 					value={selectedLanguage}
 					onValueChange={(value) => handleLanguageChange({ value })}
 				>
 					<SelectTrigger>
-						<SelectValue placeholder="Select a language" />
+						<SelectValue placeholder={t("captionsView.selectLanguage")} />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="auto">Auto detect</SelectItem>
+						<SelectItem value="auto">{t("captionsView.autoDetect")}</SelectItem>
 						{TRANSCRIPTION_LANGUAGES.map((language) => (
 							<SelectItem key={language.code} value={language.code}>
 								{language.name}
@@ -142,7 +150,7 @@ export function Captions() {
 					disabled={isProcessing}
 				>
 					{isProcessing && <Spinner className="mr-1" />}
-					{isProcessing ? processingStep : "Generate transcript"}
+					{isProcessing ? processingStep : t("captionsView.generateTranscript")}
 				</Button>
 			</div>
 		</PanelView>

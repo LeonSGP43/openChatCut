@@ -11,8 +11,10 @@ import { StickersView } from "./views/stickers";
 import { TextView } from "./views/text";
 import { EffectsView } from "./views/effects";
 import { AIView } from "./views/ai";
+import { useI18n } from "@/components/providers/i18n-provider";
 
 export function AssetsPanel() {
+	const { t } = useI18n();
 	const { activeTab } = useAssetsPanelStore();
 
 	const viewMap: Record<Tab, React.ReactNode> = {
@@ -24,18 +26,18 @@ export function AssetsPanel() {
 		effects: <EffectsView />,
 		transitions: (
 			<div className="text-muted-foreground p-4">
-				Transitions view coming soon...
+				{t("assetsTabs.comingSoonTransitions")}
 			</div>
 		),
 		captions: <Captions />,
 		filters: (
 			<div className="text-muted-foreground p-4">
-				Filters view coming soon...
+				{t("assetsTabs.comingSoonFilters")}
 			</div>
 		),
 		adjustment: (
 			<div className="text-muted-foreground p-4">
-				Adjustment view coming soon...
+				{t("assetsTabs.comingSoonAdjustment")}
 			</div>
 		),
 		settings: <SettingsView />,

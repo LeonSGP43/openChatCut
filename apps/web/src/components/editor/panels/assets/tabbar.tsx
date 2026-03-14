@@ -10,11 +10,28 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/utils/ui";
 import {
 	TAB_KEYS,
+	type Tab,
 	tabs,
 	useAssetsPanelStore,
 } from "@/stores/assets-panel-store";
+import { useI18n } from "@/components/providers/i18n-provider";
+
+const TAB_LABEL_KEYS: Record<Tab, string> = {
+	media: "assetsTabs.media",
+	ai: "assetsTabs.ai",
+	sounds: "assetsTabs.sounds",
+	text: "assetsTabs.text",
+	stickers: "assetsTabs.stickers",
+	effects: "assetsTabs.effects",
+	transitions: "assetsTabs.transitions",
+	captions: "assetsTabs.captions",
+	filters: "assetsTabs.filters",
+	adjustment: "assetsTabs.adjustment",
+	settings: "assetsTabs.settings",
+};
 
 export function TabBar() {
+	const { t } = useI18n();
 	const { activeTab, setActiveTab } = useAssetsPanelStore();
 	const [showTopFade, setShowTopFade] = useState(false);
 	const [showBottomFade, setShowBottomFade] = useState(false);
@@ -53,12 +70,13 @@ export function TabBar() {
 			>
 				{TAB_KEYS.map((tabKey) => {
 					const tab = tabs[tabKey];
+					const label = t(TAB_LABEL_KEYS[tabKey]);
 					return (
 						<Tooltip key={tabKey} delayDuration={10}>
 							<TooltipTrigger asChild>
 								<Button
 									variant={activeTab === tabKey ? "secondary" : "text"}
-									aria-label={tab.label}
+									aria-label={label}
 									className={cn(
 										"flex-col !p-1.5 !rounded-sm !h-auto [&_svg]:size-4.5",
 										activeTab !== tabKey &&
@@ -76,7 +94,7 @@ export function TabBar() {
 								sideOffset={8}
 							>
 								<div className="text-foreground text-sm leading-none font-medium">
-									{tab.label}
+									{label}
 								</div>
 							</TooltipContent>
 						</Tooltip>

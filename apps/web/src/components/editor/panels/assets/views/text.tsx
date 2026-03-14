@@ -3,8 +3,10 @@ import { PanelView } from "@/components/editor/panels/assets/views/base-view";
 import { useEditor } from "@/hooks/use-editor";
 import { DEFAULT_TEXT_ELEMENT } from "@/constants/text-constants";
 import { buildTextElement } from "@/lib/timeline/element-utils";
+import { useI18n } from "@/components/providers/i18n-provider";
 
 export function TextView() {
+	const { t } = useI18n();
 	const editor = useEditor();
 
 	const handleAddToTimeline = ({ currentTime }: { currentTime: number }) => {
@@ -23,12 +25,14 @@ export function TextView() {
 	};
 
 	return (
-		<PanelView title="Text">
+		<PanelView title={t("textView.panelTitle")}>
 			<DraggableItem
-				name="Default text"
+				name={t("textView.defaultTextName")}
 				preview={
 					<div className="bg-accent flex size-full items-center justify-center rounded">
-						<span className="text-xs select-none">Default text</span>
+						<span className="text-xs select-none">
+							{t("textView.defaultTextLabel")}
+						</span>
 					</div>
 				}
 				dragData={{

@@ -10,6 +10,7 @@ import {
 } from "@/hooks/use-keybindings";
 import { useEditorActions } from "@/hooks/actions/use-editor-actions";
 import { prefetchFontAtlas } from "@/lib/fonts/google-fonts";
+import { useI18n } from "@/components/providers/i18n-provider";
 
 interface EditorProviderProps {
 	projectId: string;
@@ -17,6 +18,7 @@ interface EditorProviderProps {
 }
 
 export function EditorProvider({ projectId, children }: EditorProviderProps) {
+	const { t } = useI18n();
 	const editor = useEditor();
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState(true);
@@ -55,16 +57,18 @@ export function EditorProvider({ projectId, children }: EditorProviderProps) {
 				if (isNotFound) {
 					try {
 						const newProjectId = await editor.project.createNewProject({
-							name: "Untitled Project",
+							name: t("editorProvider.untitledProject"),
 						});
 						router.replace(`/editor/${newProjectId}`);
 					} catch (_createErr) {
-						setError("Failed to create project");
+						setError(t("editorProvider.failedCreateProject"));
 						setIsLoading(false);
 					}
 				} else {
 					setError(
-						err instanceof Error ? err.message : "Failed to load project",
+						err instanceof Error
+							? err.message
+							: t("editorProvider.failedLoadProject"),
 					);
 					setIsLoading(false);
 				}
@@ -76,7 +80,7 @@ export function EditorProvider({ projectId, children }: EditorProviderProps) {
 		return () => {
 			cancelled = true;
 		};
-	}, [projectId, editor, router]);
+	}, [projectId, editor, router, t]);
 
 	if (error) {
 		return (
@@ -93,7 +97,9 @@ export function EditorProvider({ projectId, children }: EditorProviderProps) {
 			<div className="bg-background flex h-screen w-screen items-center justify-center">
 				<div className="flex flex-col items-center gap-4">
 					<Loader2 className="text-muted-foreground size-8 animate-spin" />
-					<p className="text-muted-foreground text-sm">Loading project...</p>
+					<p className="text-muted-foreground text-sm">
+						{t("editorProvider.loadingProject")}
+					</p>
 				</div>
 			</div>
 		);
@@ -104,7 +110,9 @@ export function EditorProvider({ projectId, children }: EditorProviderProps) {
 			<div className="bg-background flex h-screen w-screen items-center justify-center">
 				<div className="flex flex-col items-center gap-4">
 					<Loader2 className="text-muted-foreground size-8 animate-spin" />
-					<p className="text-muted-foreground text-sm">Exiting project...</p>
+					<p className="text-muted-foreground text-sm">
+						{t("editorProvider.exitingProject")}
+					</p>
 				</div>
 			</div>
 		);

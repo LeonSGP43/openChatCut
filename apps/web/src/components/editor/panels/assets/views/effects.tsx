@@ -11,12 +11,14 @@ import {
 import { useEditor } from "@/hooks/use-editor";
 import { buildEffectElement } from "@/lib/timeline/element-utils";
 import type { EffectDefinition } from "@/types/effects";
+import { useI18n } from "@/components/providers/i18n-provider";
 
 export function EffectsView() {
+	const { t } = useI18n();
 	const effects = getAllEffects();
 
 	return (
-		<PanelView title="Effects">
+		<PanelView title={t("effectsView.panelTitle")}>
 			<EffectsGrid effects={effects} />
 		</PanelView>
 	);

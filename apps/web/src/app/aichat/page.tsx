@@ -3,26 +3,28 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { BasePage } from "../base-page";
 import { Button } from "@/components/ui/button";
+import { getServerI18n } from "@/i18n/server";
 
 export const metadata: Metadata = {
 	title: "AI Chat",
 	description: "Open the in-editor AI assistant entry for OpenChatCut.",
 };
 
-export default function AIChatPage() {
+export default async function AIChatPage() {
+	const { t } = await getServerI18n();
+
 	return (
 		<BasePage
-			title="AI Chat"
-			description="AI chat lives inside the editor as a global sidebar. Create or open a project first."
+			title={t("aichatPage.title")}
+			description={t("aichatPage.description")}
 		>
 			<div className="mx-auto flex w-full max-w-xl flex-col gap-4 rounded-xl border p-6">
 				<p className="text-muted-foreground text-sm">
-					Path: <span className="font-mono">/projects</span> - create project -
-					open editor - use AI Chat button in the top bar.
+					{t("aichatPage.pathHint")}
 				</p>
 				<Link href="/projects" className="w-fit">
 					<Button>
-						Open Projects
+						{t("aichatPage.openProjects")}
 						<ArrowRight className="size-4" />
 					</Button>
 				</Link>

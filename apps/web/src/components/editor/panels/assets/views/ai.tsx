@@ -63,6 +63,7 @@ import { transcriptionService } from "@/services/transcription/service";
 import { buildCaptionChunks } from "@/lib/transcription/caption";
 import { DEFAULT_TEXT_ELEMENT } from "@/constants/text-constants";
 import { cn } from "@/utils/ui";
+import { useI18n } from "@/components/providers/i18n-provider";
 
 type MessageRole = "system" | "user" | "assistant";
 
@@ -71,19 +72,6 @@ interface AIMessage {
 	role: MessageRole;
 	content: string;
 }
-
-const INITIAL_MESSAGE: AIMessage = {
-	id: 1,
-	role: "system",
-	content:
-		"AI edit assistant is ready (Grok-backed). Follow Prompt -> Assets -> Analysis -> Confirm before planning and execution.",
-};
-
-const ROLE_LABELS: Record<MessageRole, string> = {
-	system: "System",
-	user: "You",
-	assistant: "AI",
-};
 
 const ACTION_LABELS: Record<PlannedAction["type"], string> = {
 	"toggle-play": "Play/Pause",
@@ -108,12 +96,7 @@ const ACTION_LABELS: Record<PlannedAction["type"], string> = {
 
 const AUDIT_MERGE_STRATEGY_OPTIONS: {
 	value: AuditMergeStrategy;
-	label: string;
-}[] = [
-	{ value: "replace", label: "Replace" },
-	{ value: "append", label: "Append" },
-	{ value: "dedupe", label: "Dedupe" },
-];
+}[] = [{ value: "replace" }, { value: "append" }, { value: "dedupe" }];
 
 const PROJECT_PROMPT_STORAGE_PREFIX = "opencut:ai-editor:project-prompt:";
 const ANALYSIS_SETTINGS_STORAGE_PREFIX = "opencut:ai-editor:analysis-settings:";
@@ -155,9 +138,17 @@ interface AIViewProps {
 }
 
 export function AIView({ embedded = false }: AIViewProps) {
+	const { t } = useI18n();
+	const initialSystemMessage = t("aiView.initial");
 	const editor = useEditor();
 	const activeProjectId = editor.project.getActive()?.metadata.id;
-	const [messages, setMessages] = useState<AIMessage[]>([INITIAL_MESSAGE]);
+	const [messages, setMessages] = useState<AIMessage[]>(() => [
+		{
+			id: 1,
+			role: "system",
+			content: initialSystemMessage,
+		},
+	]);
 	const [draft, setDraft] = useState("");
 	const [projectPromptDraft, setProjectPromptDraft] = useState("");
 	const [projectPrompt, setProjectPrompt] = useState("");
@@ -186,6 +177,16 @@ export function AIView({ embedded = false }: AIViewProps) {
 	const [confirmationState, setConfirmationState] = useState<ConfirmationState>(
 		() => buildConfirmationState({ plans: [] }),
 	);
+	const roleLabels: Record<MessageRole, string> = {
+		system: t("aiView.role.system"),
+		user: t("aiView.role.user"),
+		assistant: t("aiView.role.assistant"),
+	};
+	const auditMergeStrategyLabels: Record<AuditMergeStrategy, string> = {
+		replace: t("aiView.strategy.replace"),
+		append: t("aiView.strategy.append"),
+		dedupe: t("aiView.strategy.dedupe"),
+	};
 	const nextMessageIdRef = useRef(2);
 	const auditImportInputRef = useRef<HTMLInputElement | null>(null);
 	const workflowFingerprintRef = useRef<string | null>(null);
@@ -257,6 +258,19 @@ export function AIView({ embedded = false }: AIViewProps) {
 		setLastPlannedInput("");
 		setConfirmationState(buildConfirmationState({ plans: [] }));
 	};
+
+	useEffect(() => {
+		setMessages((current) => {
+			if (current.length === 0) {
+				return current;
+			}
+			const first = current[0];
+			if (!first || first.role !== "system") {
+				return current;
+			}
+			return [{ ...first, content: initialSystemMessage }, ...current.slice(1)];
+		});
+	}, [initialSystemMessage]);
 
 	const buildAssetSummaryForModel = () => {
 		const topLevelSummary = buildAssetSummaryText({
@@ -439,7 +453,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 				typeof payload.assistantMessage === "string" &&
 				payload.assistantMessage.trim().length > 0
 					? payload.assistantMessage
-					: "No assistant message returned.",
+					: t("aiView.msg.noAssistantMessage"),
 			plannedActions,
 		};
 	};
@@ -451,7 +465,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 				...current,
 				createMessage({
 					role: "assistant",
-					content: "Project prompt is empty. Add your editing goal first.",
+					content: t("aiView.msg.projectPromptEmpty"),
 				}),
 			]);
 			return;
@@ -464,8 +478,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 			...current,
 			createMessage({
 				role: "assistant",
-				content:
-					"Project prompt saved. Next step: add media assets, then click Analyze Prompt + Assets.",
+				content: t("aiView.msg.projectPromptSaved"),
 			}),
 		]);
 	};
@@ -476,7 +489,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 				...current,
 				createMessage({
 					role: "assistant",
-					content: "Save a project prompt first, then run context analysis.",
+					content: t("aiView.msg.savePromptBeforeAnalysis"),
 				}),
 			]);
 			return;
@@ -486,8 +499,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 				...current,
 				createMessage({
 					role: "assistant",
-					content:
-						"No assets found. Add video/audio/image assets first, then analyze.",
+					content: t("aiView.msg.noAssetsBeforeAnalysis"),
 				}),
 			]);
 			return;
@@ -497,8 +509,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 		try {
 			const response = await requestGrokChat({
 				mode: "analysis",
-				userInput:
-					"Analyze current project prompt and media/timeline context. Provide understanding, editing strategy, and concise clarification questions for confirmation.",
+				userInput: t("aiView.msg.analysisUserInput"),
 			});
 			setAnalysisGenerated(true);
 			setAnalysisConfirmed(false);
@@ -516,7 +527,12 @@ export function AIView({ embedded = false }: AIViewProps) {
 				...current,
 				createMessage({
 					role: "assistant",
-					content: `Grok analysis failed: ${error instanceof Error ? error.message : "unknown error"}. Please fix Grok configuration/network and retry.`,
+					content: t("aiView.msg.analysisFailed", {
+						error:
+							error instanceof Error
+								? error.message
+								: t("aiView.msg.unknownError"),
+					}),
 				}),
 			]);
 		} finally {
@@ -530,8 +546,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 				...current,
 				createMessage({
 					role: "assistant",
-					content:
-						"Run Analyze Prompt + Assets first. Confirmation is enabled after analysis output is generated.",
+					content: t("aiView.msg.runAnalysisFirst"),
 				}),
 			]);
 			return;
@@ -542,8 +557,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 			...current,
 			createMessage({
 				role: "assistant",
-				content:
-					"Analysis confirmed. You can now run multi-round edit instructions and execute the planned actions.",
+				content: t("aiView.msg.analysisConfirmed"),
 			}),
 		]);
 	};
@@ -585,8 +599,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 				...current,
 				createMessage({
 					role: "assistant",
-					content:
-						"Caption generation skipped: timeline has no usable media/audio content.",
+					content: t("aiView.msg.captionSkipped"),
 				}),
 			]);
 			return;
@@ -597,7 +610,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 			...current,
 			createMessage({
 				role: "assistant",
-				content: "Generating captions from timeline audio...",
+				content: t("aiView.msg.generatingCaptions"),
 			}),
 		]);
 
@@ -614,7 +627,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 			const captionChunks = buildCaptionChunks({ segments: result.segments });
 
 			if (captionChunks.length === 0) {
-				throw new Error("No caption segments generated");
+				throw new Error(t("aiView.msg.noCaptionSegments"));
 			}
 
 			const captionTrackId = editor.timeline.addTrack({
@@ -643,7 +656,9 @@ export function AIView({ embedded = false }: AIViewProps) {
 				...current,
 				createMessage({
 					role: "assistant",
-					content: `Generated captions on a new text track (${captionChunks.length} clips).`,
+					content: t("aiView.msg.captionsGenerated", {
+						count: captionChunks.length,
+					}),
 				}),
 			]);
 			emitAIEditorTelemetry({
@@ -658,7 +673,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 				...current,
 				createMessage({
 					role: "assistant",
-					content: "Caption generation failed.",
+					content: t("aiView.msg.captionFailed"),
 				}),
 			]);
 			emitAIEditorTelemetry({
@@ -696,8 +711,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 				createMessage({ role: "user", content: input }),
 				createMessage({
 					role: "assistant",
-					content:
-						"Project prompt is required before planning. Fill in Project Prompt and click Save Prompt.",
+					content: t("aiView.msg.promptRequiredBeforePlan"),
 				}),
 			]);
 			return;
@@ -709,8 +723,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 				createMessage({ role: "user", content: input }),
 				createMessage({
 					role: "assistant",
-					content:
-						"No media assets detected. Add assets first, then run Analyze Prompt + Assets.",
+					content: t("aiView.msg.assetsRequiredBeforePlan"),
 				}),
 			]);
 			return;
@@ -722,8 +735,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 				createMessage({ role: "user", content: input }),
 				createMessage({
 					role: "assistant",
-					content:
-						"Analysis is not confirmed yet. Run Analyze Prompt + Assets, review with user, then click Confirm Analysis.",
+					content: t("aiView.msg.analysisNotConfirmed"),
 				}),
 			]);
 			return;
@@ -746,8 +758,10 @@ export function AIView({ embedded = false }: AIViewProps) {
 			assistantMessage = grokResponse.assistantMessage;
 		} catch (error) {
 			const fallbackMessage =
-				error instanceof Error ? error.message : "unknown error";
-			assistantMessage = `Grok plan request failed (${fallbackMessage}). Please fix Grok configuration/network and retry.`;
+				error instanceof Error ? error.message : t("aiView.msg.unknownError");
+			assistantMessage = t("aiView.msg.planRequestFailed", {
+				error: fallbackMessage,
+			});
 		} finally {
 			setIsRunning(false);
 		}
@@ -776,14 +790,14 @@ export function AIView({ embedded = false }: AIViewProps) {
 				assistantMessage.trim().length > 0
 					? assistantMessage
 					: planSummary === null
-						? "No safe action matched. Try play/stop, go to start/end, select/copy/paste/duplicate, split, bookmark, delete selected, mute/visibility, snapping, or ripple editing."
+						? t("aiView.msg.noSafeActionMatched")
 						: planSummary.text;
 
 			if (planSummary === null) {
 				return baseMessage;
 			}
 
-			return `${baseMessage}\n\n${planSummary.text}\nClick Execute to apply.`;
+			return `${baseMessage}\n\n${planSummary.text}\n${t("aiView.msg.clickExecuteToApply")}`;
 		})();
 
 		setMessages((current) => {
@@ -823,8 +837,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 				...current,
 				createMessage({
 					role: "assistant",
-					content:
-						"Workflow is not ready for execution. Complete Prompt + Assets + Analysis confirmation first.",
+					content: t("aiView.msg.workflowNotReady"),
 				}),
 			]);
 			return;
@@ -840,7 +853,9 @@ export function AIView({ embedded = false }: AIViewProps) {
 				...current,
 				createMessage({
 					role: "assistant",
-					content: `High-risk confirmations missing: ${missingConfirmations.join(", ")}. Confirm each required action before execute.`,
+					content: t("aiView.msg.highRiskMissing", {
+						actions: missingConfirmations.join(", "),
+					}),
 				}),
 			]);
 			return;
@@ -896,7 +911,13 @@ export function AIView({ embedded = false }: AIViewProps) {
 				// Ignore storage errors and keep in-memory clear behavior.
 			}
 		}
-		setMessages([INITIAL_MESSAGE]);
+		setMessages([
+			{
+				id: 1,
+				role: "system",
+				content: initialSystemMessage,
+			},
+		]);
 		setDraft("");
 		setPendingPlans([]);
 		setPendingPlanSummary(null);
@@ -933,7 +954,9 @@ export function AIView({ embedded = false }: AIViewProps) {
 				...current,
 				createMessage({
 					role: "assistant",
-					content: `Audit exported (${payload.entryCount} entries).`,
+					content: t("aiView.msg.auditExported", {
+						count: payload.entryCount,
+					}),
 				}),
 			]);
 			emitAIEditorTelemetry({
@@ -951,7 +974,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 				...current,
 				createMessage({
 					role: "assistant",
-					content: "Audit export failed.",
+					content: t("aiView.msg.auditExportFailed"),
 				}),
 			]);
 		}
@@ -974,7 +997,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 			const raw = await file.text();
 			const payload = parseAuditExportPayload({ raw });
 			if (!payload) {
-				throw new Error("Invalid audit payload");
+				throw new Error(t("aiView.msg.invalidAuditPayload"));
 			}
 			const preview = buildAuditImportPreview({
 				fileName: file.name,
@@ -1005,7 +1028,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 				...current,
 				createMessage({
 					role: "assistant",
-					content: "Audit import failed.",
+					content: t("aiView.msg.auditImportFailed"),
 				}),
 			]);
 		} finally {
@@ -1185,18 +1208,17 @@ export function AIView({ embedded = false }: AIViewProps) {
 		<div className="flex min-h-0 h-full flex-col gap-3 pb-2">
 			<div className="bg-accent/20 border rounded-md p-2">
 				<div className="text-xs text-muted-foreground mb-1.5">
-					New project workflow: Prompt - Assets - Analysis - Confirm - Plan -
-					Execute
+					{t("aiView.msg.newProjectWorkflow")}
 				</div>
 				<Textarea
 					value={projectPromptDraft}
 					onChange={(event) => setProjectPromptDraft(event.target.value)}
-					placeholder="Describe your editing objective, audience, style, pacing, and constraints..."
+					placeholder={t("aiView.projectPromptPlaceholder")}
 					rows={3}
 				/>
 				<div className="mt-2 flex items-center gap-2">
 					<span className="text-muted-foreground text-xs">
-						Asset analysis concurrency
+						{t("aiView.analysisConcurrencyLabel")}
 					</span>
 					<Input
 						type="number"
@@ -1218,13 +1240,13 @@ export function AIView({ embedded = false }: AIViewProps) {
 				<Textarea
 					value={analysisPrompt}
 					onChange={(event) => setAnalysisPrompt(event.target.value)}
-					placeholder="Optional custom prompt for asset understanding (leave empty to use best-practice default)."
+					placeholder={t("aiView.analysisPromptPlaceholder")}
 					rows={2}
 					className="mt-2"
 				/>
 				<div className="mt-2 flex flex-wrap items-center gap-2">
 					<Button size="sm" onClick={handleSaveProjectPrompt}>
-						Save Prompt
+						{t("aiView.savePrompt")}
 					</Button>
 					<Button
 						size="sm"
@@ -1232,7 +1254,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 						onClick={() => void handleAnalyzeContext()}
 						disabled={!hasProjectPrompt || !hasAssets || isRunning}
 					>
-						Analyze Prompt + Assets
+						{t("aiView.analyzePromptAssets")}
 					</Button>
 					<Button
 						size="sm"
@@ -1240,13 +1262,24 @@ export function AIView({ embedded = false }: AIViewProps) {
 						onClick={handleConfirmAnalysis}
 						disabled={!analysisGenerated}
 					>
-						{analysisConfirmed ? "Analysis Confirmed" : "Confirm Analysis"}
+						{analysisConfirmed
+							? t("aiView.analysisConfirmed")
+							: t("aiView.confirmAnalysis")}
 					</Button>
 				</div>
 				<div className="mt-2 text-xs text-muted-foreground">
-					Workflow status: Prompt {hasProjectPrompt ? "done" : "pending"} |
-					Assets {hasAssets ? `${mediaAssets.length} loaded` : "pending"} |
-					Analysis {analysisConfirmed ? "confirmed" : "pending"}
+					{t("aiView.workflowStatus")}: Prompt{" "}
+					{hasProjectPrompt
+						? t("aiView.statusDone")
+						: t("aiView.statusPending")}{" "}
+					| Assets{" "}
+					{hasAssets
+						? t("aiView.assetsLoaded", { count: mediaAssets.length })
+						: t("aiView.statusPending")}{" "}
+					| Analysis{" "}
+					{analysisConfirmed
+						? t("aiView.analysisConfirmed")
+						: t("aiView.statusPending")}
 				</div>
 			</div>
 
@@ -1263,7 +1296,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 							)}
 						>
 							<div className="text-muted-foreground text-xs mb-1">
-								{ROLE_LABELS[message.role]}
+								{roleLabels[message.role]}
 							</div>
 							<div className="leading-relaxed whitespace-pre-wrap">
 								{message.content}
@@ -1277,8 +1310,10 @@ export function AIView({ embedded = false }: AIViewProps) {
 				{pendingPlans.length > 0 && (
 					<div className="bg-accent/30 border border-border/70 rounded-md p-2">
 						<div className="text-xs text-muted-foreground mb-1">
-							Dry-run plan (highest risk:{" "}
-							{pendingPlanSummary?.highestRiskLevel ?? "low"})
+							{t("aiView.planSummary", {
+								count: pendingPlans.length,
+								risk: pendingPlanSummary?.highestRiskLevel ?? "low",
+							})}
 						</div>
 						<div className="flex flex-wrap gap-1.5">
 							{pendingPlans.map((plan) => (
@@ -1293,7 +1328,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 						{requiresActionConfirmation && (
 							<div className="mt-2 border border-destructive/30 rounded-md bg-destructive/10 p-2">
 								<div className="text-xs text-destructive mb-1">
-									High-risk actions require per-action confirmation.
+									{t("aiView.highRiskNeedsConfirm")}
 								</div>
 								<div className="flex flex-wrap gap-2">
 									{confirmationState.planActionTypes.map((actionType) => {
@@ -1313,7 +1348,9 @@ export function AIView({ embedded = false }: AIViewProps) {
 													)
 												}
 											>
-												{isConfirmed ? "Confirmed" : "Confirm"}{" "}
+												{isConfirmed
+													? t("aiView.confirmed")
+													: t("common.confirm")}{" "}
 												{ACTION_LABELS[actionType]}
 											</Button>
 										);
@@ -1330,8 +1367,9 @@ export function AIView({ embedded = false }: AIViewProps) {
 						</div>
 						{importPreview.dedupedCount > 0 && (
 							<div className="text-xs text-muted-foreground mt-1">
-								Dedupe will remove {importPreview.dedupedCount} duplicate
-								entry(ies).
+								{t("aiView.msg.dedupeWillRemove", {
+									count: importPreview.dedupedCount,
+								})}
 							</div>
 						)}
 						<div className="mt-2 flex items-center gap-2">
@@ -1341,7 +1379,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 								onClick={handleApplyImportPreview}
 								disabled={isRunning}
 							>
-								Apply Import
+								{t("aiView.msg.applyImport")}
 							</Button>
 							<Button
 								size="sm"
@@ -1349,7 +1387,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 								onClick={handleCancelImportPreview}
 								disabled={isRunning}
 							>
-								Cancel Import
+								{t("aiView.msg.cancelImport")}
 							</Button>
 						</div>
 					</div>
@@ -1358,12 +1396,12 @@ export function AIView({ embedded = false }: AIViewProps) {
 					value={draft}
 					onChange={(event) => setDraft(event.target.value)}
 					onKeyDown={handleInputKeyDown}
-					placeholder="Describe the edit task you want to plan..."
+					placeholder={t("aiView.draftPlaceholder")}
 					rows={4}
 				/>
 				<div className="flex flex-wrap items-center justify-between gap-2">
 					<span className="text-muted-foreground text-xs">
-						Press Ctrl/Cmd + Enter to run
+						{t("aiView.runHint")}
 					</span>
 					<div className="flex flex-wrap items-center justify-end gap-2">
 						<input
@@ -1385,13 +1423,13 @@ export function AIView({ embedded = false }: AIViewProps) {
 										className="h-6 px-2 text-[11px]"
 										onClick={() => setImportMergeStrategy(strategyOption.value)}
 									>
-										{strategyOption.label}
+										{auditMergeStrategyLabels[strategyOption.value]}
 									</Button>
 								);
 							})}
 						</div>
 						<Button variant="ghost" size="sm" onClick={handleImportAuditClick}>
-							Import Audit
+							{t("aiView.importAudit")}
 						</Button>
 						<Button
 							variant="ghost"
@@ -1399,7 +1437,7 @@ export function AIView({ embedded = false }: AIViewProps) {
 							onClick={handleExportAudit}
 							disabled={!canExportAudit}
 						>
-							Export Audit
+							{t("aiView.exportAudit")}
 						</Button>
 						<Button
 							variant="ghost"
@@ -1407,14 +1445,14 @@ export function AIView({ embedded = false }: AIViewProps) {
 							onClick={handleClear}
 							disabled={!canClear || isRunning}
 						>
-							Clear
+							{t("aiView.clearChat")}
 						</Button>
 						<Button
 							size="sm"
 							onClick={() => void handleRun()}
 							disabled={!canRun || isRunning}
 						>
-							Run (Plan)
+							{t("aiView.run")}
 						</Button>
 						<Button
 							size="sm"
@@ -1422,12 +1460,12 @@ export function AIView({ embedded = false }: AIViewProps) {
 							onClick={handleExecute}
 							disabled={!canExecute}
 						>
-							{isRunning ? "Executing..." : "Execute"}
+							{isRunning ? t("aiView.executing") : t("aiView.execute")}
 						</Button>
 					</div>
 				</div>
 				<div className="text-xs text-muted-foreground">
-					Audit entries: {auditEntries.length}
+					{t("aiView.msg.auditEntries", { count: auditEntries.length })}
 				</div>
 			</div>
 		</div>
@@ -1437,5 +1475,5 @@ export function AIView({ embedded = false }: AIViewProps) {
 		return <div className="h-full p-2">{content}</div>;
 	}
 
-	return <PanelView title="AI">{content}</PanelView>;
+	return <PanelView title={t("aiView.panelTitle")}>{content}</PanelView>;
 }

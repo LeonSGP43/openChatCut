@@ -6,6 +6,7 @@ import { cn } from "@/utils/ui";
 import { Sun03Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useEffect, useState } from "react";
+import { useI18n } from "./providers/i18n-provider";
 
 interface ThemeToggleProps {
 	className?: string;
@@ -19,6 +20,7 @@ export function ThemeToggle({
 	onToggle,
 }: ThemeToggleProps) {
 	const { resolvedTheme, setTheme } = useTheme();
+	const { t } = useI18n();
 	const [mounted, setMounted] = useState(false);
 
 	useEffect(() => {
@@ -42,7 +44,11 @@ export function ThemeToggle({
 				className={cn("!size-[1.1rem]", iconClassName)}
 			/>
 			<span className="sr-only">
-				{mounted ? (isDark ? "Light" : "Dark") : "Toggle theme"}
+				{mounted
+					? isDark
+						? t("themeToggle.light")
+						: t("themeToggle.dark")
+					: t("themeToggle.toggle")}
 			</span>
 		</Button>
 	);

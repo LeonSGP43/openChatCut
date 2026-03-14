@@ -1,35 +1,40 @@
+"use client";
+
 import Link from "next/link";
 import { RiDiscordFill, RiTwitterXLine } from "react-icons/ri";
 import { FaGithub } from "react-icons/fa6";
 import Image from "next/image";
 import { DEFAULT_LOGO_URL, SOCIAL_LINKS } from "@/constants/site-constants";
-import { capitalizeFirstLetter } from "@/utils/string";
+import { useI18n } from "./providers/i18n-provider";
 
 type Category = "resources" | "company";
 
-interface FooterLink {
-	label: string;
-	href: string;
-}
-
-type CategoryLinks = Record<Category, FooterLink[]>;
-
-const links: CategoryLinks = {
-	resources: [
-		{ label: "Roadmap", href: "/roadmap" },
-		{ label: "Changelog", href: "/changelog" },
-		{ label: "Blog", href: "/blog" },
-		{ label: "Privacy", href: "/privacy" },
-		{ label: "Terms of use", href: "/terms" },
-	],
-	company: [
-		{ label: "Sponsors", href: "/sponsors" },
-		{ label: "Brand", href: "/brand" },
-		{ label: "About", href: `${SOCIAL_LINKS.github}/blob/main/README.md` },
-	],
-};
-
 export function Footer() {
+	const { t } = useI18n();
+
+	const links: Record<Category, Array<{ label: string; href: string }>> = {
+		resources: [
+			{ label: t("footer.roadmap"), href: "/roadmap" },
+			{ label: t("footer.changelog"), href: "/changelog" },
+			{ label: t("footer.blog"), href: "/blog" },
+			{ label: t("footer.privacy"), href: "/privacy" },
+			{ label: t("footer.terms"), href: "/terms" },
+		],
+		company: [
+			{ label: t("footer.sponsors"), href: "/sponsors" },
+			{ label: t("footer.brand"), href: "/brand" },
+			{
+				label: t("footer.about"),
+				href: `${SOCIAL_LINKS.github}/blob/main/README.md`,
+			},
+		],
+	};
+
+	const categoryLabels: Record<Category, string> = {
+		resources: t("footer.resources"),
+		company: t("footer.company"),
+	};
+
 	return (
 		<footer className="bg-background border-t">
 			<div className="mx-auto max-w-5xl px-8 py-10">
@@ -47,7 +52,7 @@ export function Footer() {
 							<span className="text-lg font-bold">OpenCut</span>
 						</div>
 						<p className="text-muted-foreground mb-5 text-sm md:text-left">
-							The privacy-first video editor that feels simple to use.
+							{t("footer.tagline")}
 						</p>
 						<div className="flex justify-start gap-3">
 							<Link
@@ -81,7 +86,7 @@ export function Footer() {
 						{(Object.keys(links) as Category[]).map((category) => (
 							<div key={category} className="flex flex-col gap-2">
 								<h3 className="text-foreground font-semibold">
-									{capitalizeFirstLetter({ string: category })}
+									{categoryLabels[category]}
 								</h3>
 								<ul className="space-y-2 text-sm">
 									{links[category].map((link) => (
@@ -112,7 +117,7 @@ export function Footer() {
 				<div className="flex flex-col items-start justify-between gap-4 pt-2 md:flex-row">
 					<div className="text-muted-foreground flex items-center gap-4 text-sm">
 						<span>
-							© {new Date().getFullYear()} OpenCut, All Rights Reserved
+							{t("footer.copyright", { year: new Date().getFullYear() })}
 						</span>
 					</div>
 				</div>

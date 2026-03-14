@@ -16,6 +16,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { useI18n } from "@/components/providers/i18n-provider";
 
 export function ShortcutsDialog({
 	isOpen,
@@ -24,6 +25,7 @@ export function ShortcutsDialog({
 	isOpen: boolean;
 	onOpenChange: (open: boolean) => void;
 }) {
+	const { t } = useI18n();
 	const [recordingShortcut, setRecordingShortcut] =
 		useState<KeyboardShortcut | null>(null);
 
@@ -41,6 +43,9 @@ export function ShortcutsDialog({
 	const { shortcuts } = useKeyboardShortcutsHelp();
 
 	const categories = Array.from(new Set(shortcuts.map((s) => s.category)));
+	const recordingTitle = t("dialogs.shortcuts.recording");
+	const idleTitle = t("dialogs.shortcuts.clickToEdit");
+	const orLabel = t("dialogs.shortcuts.or");
 
 	useEffect(() => {
 		if (!isRecording || !recordingShortcut) return;
@@ -57,7 +62,10 @@ export function ShortcutsDialog({
 				);
 				if (conflict) {
 					toast.error(
-						`Key "${keyString}" is already bound to "${conflict.existingAction}"`,
+						t("dialogs.shortcuts.keyBound", {
+							key: keyString,
+							action: conflict.existingAction,
+						}),
 					);
 					setRecordingShortcut(null);
 					return;
@@ -96,6 +104,7 @@ export function ShortcutsDialog({
 		getKeybindingsForAction,
 		setIsRecording,
 		isRecording,
+		t,
 	]);
 
 	const handleStartRecording = (shortcut: KeyboardShortcut) => {
@@ -107,7 +116,7 @@ export function ShortcutsDialog({
 		<Dialog open={isOpen} onOpenChange={onOpenChange}>
 			<DialogContent className="flex max-h-[80vh] max-w-2xl flex-col p-0">
 				<DialogHeader>
-					<DialogTitle>Keyboard shortcuts</DialogTitle>
+					<DialogTitle>{t("dialogs.shortcuts.title")}</DialogTitle>
 				</DialogHeader>
 
 				<DialogBody className="scrollbar-thin flex-grow overflow-y-auto">
@@ -128,6 +137,9 @@ export function ShortcutsDialog({
 													shortcut.action === recordingShortcut?.action
 												}
 												onStartRecording={() => handleStartRecording(shortcut)}
+												orLabel={orLabel}
+												recordingTitle={recordingTitle}
+												idleTitle={idleTitle}
 											/>
 										))}
 								</div>
@@ -137,7 +149,7 @@ export function ShortcutsDialog({
 				</DialogBody>
 				<DialogFooter>
 					<Button variant="destructive" onClick={resetToDefaults}>
-						Reset to default
+						{t("dialogs.shortcuts.reset")}
 					</Button>
 				</DialogFooter>
 			</DialogContent>
@@ -149,10 +161,16 @@ function ShortcutItem({
 	shortcut,
 	isRecording,
 	onStartRecording,
+	orLabel,
+	recordingTitle,
+	idleTitle,
 }: {
 	shortcut: KeyboardShortcut;
 	isRecording: boolean;
 	onStartRecording: (params: { shortcut: KeyboardShortcut }) => void;
+	orLabel: string;
+	recordingTitle: string;
+	idleTitle: string;
 }) {
 	const displayKeys = shortcut.keys.filter((key: string) => {
 		if (
@@ -183,6 +201,8 @@ function ShortcutItem({
 										key={keyId}
 										isRecording={isRecording}
 										onStartRecording={() => onStartRecording({ shortcut })}
+										recordingTitle={recordingTitle}
+										idleTitle={idleTitle}
 									>
 										{keyPart}
 									</EditableShortcutKey>
@@ -190,7 +210,7 @@ function ShortcutItem({
 							})}
 						</div>
 						{index < displayKeys.length - 1 && (
-							<span className="text-muted-foreground text-xs">or</span>
+							<span className="text-muted-foreground text-xs">{orLabel}</span>
 						)}
 					</div>
 				))}
@@ -203,10 +223,14 @@ function EditableShortcutKey({
 	children,
 	isRecording,
 	onStartRecording,
+	recordingTitle,
+	idleTitle,
 }: {
 	children: React.ReactNode;
 	isRecording: boolean;
 	onStartRecording: () => void;
+	recordingTitle: string;
+	idleTitle: string;
 }) {
 	const handleClick = (e: React.MouseEvent) => {
 		e.preventDefault();
@@ -219,9 +243,7 @@ function EditableShortcutKey({
 			variant="outline"
 			size="sm"
 			onClick={handleClick}
-			title={
-				isRecording ? "Press any key combination..." : "Click to edit shortcut"
-			}
+			title={isRecording ? recordingTitle : idleTitle}
 		>
 			{children}
 		</Button>

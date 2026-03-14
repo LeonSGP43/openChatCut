@@ -23,22 +23,25 @@ import {
 	ContextMenuItem,
 	ContextMenuTrigger,
 } from "./ui/context-menu";
+import { LocaleSwitcher } from "./locale-switcher";
+import { useI18n } from "./providers/i18n-provider";
 
 export function Header() {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
+	const { t } = useI18n();
 	const closeMenu = () => setIsMenuOpen(false);
 
 	const links = [
 		{
-			label: "Roadmap",
+			label: t("header.roadmap"),
 			href: "/roadmap",
 		},
 		{
-			label: "Sponsors",
+			label: t("header.sponsors"),
 			href: "/sponsors",
 		},
 		{
-			label: "Blog",
+			label: t("header.blog"),
 			href: "/blog",
 		},
 	];
@@ -68,7 +71,7 @@ export function Header() {
 								}}
 							>
 								<HugeiconsIcon icon={Copy01Icon} />
-								Copy SVG
+								{t("header.copySvg")}
 							</ContextMenuItem>
 							<ContextMenuItem
 								onClick={() => {
@@ -79,12 +82,12 @@ export function Header() {
 								}}
 							>
 								<HugeiconsIcon icon={Download01Icon} />
-								Download SVG
+								{t("header.downloadSvg")}
 							</ContextMenuItem>
 							<Link href="/brand">
 								<ContextMenuItem>
 									<HugeiconsIcon icon={LinkSquare02Icon} />
-									Brand assets
+									{t("header.brandAssets")}
 								</ContextMenuItem>
 							</Link>
 						</ContextMenuContent>
@@ -121,10 +124,11 @@ export function Header() {
 						</Link>
 						<Link href="/projects">
 							<Button className="text-sm">
-								Projects
+								{t("header.projects")}
 								<ArrowRight className="size-4" />
 							</Button>
 						</Link>
+						<LocaleSwitcher />
 						<ThemeToggle />
 					</div>
 				</div>
@@ -138,7 +142,7 @@ export function Header() {
 					<div className="relative h-full">
 						<button
 							type="button"
-							aria-label="Close menu"
+							aria-label={t("header.closeMenu")}
 							className="absolute inset-0"
 							onClick={closeMenu}
 							onKeyDown={(event) => {
@@ -177,14 +181,17 @@ export function Header() {
 								</motion.div>
 							))}
 						</nav>
-						<ThemeToggle
-							className="absolute right-8 bottom-8 size-10"
-							iconClassName="!size-[1.2rem]"
-							onToggle={(e) => {
-								e.preventDefault();
-								e.stopPropagation();
-							}}
-						/>
+						<div className="absolute right-8 bottom-8 flex items-center gap-2">
+							<LocaleSwitcher className="h-10 px-3" />
+							<ThemeToggle
+								className="size-10"
+								iconClassName="!size-[1.2rem]"
+								onToggle={(e) => {
+									e.preventDefault();
+									e.stopPropagation();
+								}}
+							/>
+						</div>
 					</div>
 				</div>
 			</div>

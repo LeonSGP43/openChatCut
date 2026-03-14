@@ -1,3 +1,5 @@
+"use client";
+
 import {
 	Dialog,
 	DialogBody,
@@ -10,6 +12,7 @@ import type { TProjectMetadata } from "@/types/project";
 import { formatDate } from "@/utils/date";
 import { formatTimeCode } from "@/lib/time";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/components/providers/i18n-provider";
 
 function InfoRow({
 	label,
@@ -35,6 +38,7 @@ export function ProjectInfoDialog({
 	onOpenChange: (open: boolean) => void;
 	project: TProjectMetadata;
 }) {
+	const { t } = useI18n();
 	const durationFormatted =
 		project.duration > 0
 			? formatTimeCode({
@@ -53,17 +57,20 @@ export function ProjectInfoDialog({
 				</DialogHeader>
 
 				<DialogBody className="flex flex-col">
-					<InfoRow label="Duration" value={durationFormatted} />
 					<InfoRow
-						label="Created"
+						label={t("dialogs.projectInfo.duration")}
+						value={durationFormatted}
+					/>
+					<InfoRow
+						label={t("dialogs.projectInfo.created")}
 						value={formatDate({ date: project.createdAt })}
 					/>
 					<InfoRow
-						label="Modified"
+						label={t("dialogs.projectInfo.modified")}
 						value={formatDate({ date: project.updatedAt })}
 					/>
 					<InfoRow
-						label="Project ID"
+						label={t("dialogs.projectInfo.projectId")}
 						value={
 							<code className="text-xs bg-muted px-1.5 py-0.5 rounded">
 								{project.id.slice(0, 8)}
@@ -73,9 +80,11 @@ export function ProjectInfoDialog({
 				</DialogBody>
 				<DialogFooter>
 					<Button variant="outline" onClick={() => onOpenChange(false)}>
-						Close
+						{t("common.close")}
 					</Button>
-					<Button onClick={() => onOpenChange(false)}>Done</Button>
+					<Button onClick={() => onOpenChange(false)}>
+						{t("common.done")}
+					</Button>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>

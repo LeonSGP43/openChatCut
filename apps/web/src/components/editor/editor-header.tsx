@@ -24,6 +24,8 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { ShortcutsDialog } from "./dialogs/shortcuts-dialog";
 import Image from "next/image";
 import { cn } from "@/utils/ui";
+import { PanelRightClose, PanelRightOpen } from "lucide-react";
+import { useAIChatDockStore } from "@/stores/ai-chat-dock-store";
 
 export function EditorHeader() {
 	return (
@@ -33,10 +35,31 @@ export function EditorHeader() {
 				<EditableProjectName />
 			</div>
 			<nav className="flex items-center gap-2">
+				<AIChatDockToggle />
 				<ExportButton />
 				<ThemeToggle />
 			</nav>
 		</header>
+	);
+}
+
+function AIChatDockToggle() {
+	const { isOpen, toggle } = useAIChatDockStore();
+
+	return (
+		<Button
+			variant={isOpen ? "secondary" : "outline"}
+			size="sm"
+			className="h-8"
+			onClick={toggle}
+		>
+			{isOpen ? (
+				<PanelRightClose className="size-4" />
+			) : (
+				<PanelRightOpen className="size-4" />
+			)}
+			AI Chat
+		</Button>
 	);
 }
 

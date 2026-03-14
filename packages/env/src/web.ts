@@ -27,6 +27,22 @@ const webEnvSchema = z.object({
 	R2_SECRET_ACCESS_KEY: z.string(),
 	R2_BUCKET_NAME: z.string(),
 	MODAL_TRANSCRIPTION_URL: z.url(),
+	GROK_API_BASE_URL: z.url().optional(),
+	GROK_API_KEY: z.string().optional(),
+	GROK_MODEL: z.string().default("grok-4.1-thinking"),
+	GROK_REASONING_EFFORT: z
+		.enum(["none", "minimal", "low", "medium", "high", "xhigh"])
+		.default("medium"),
+	GROK_ASSET_ANALYSIS_MODEL: z.string().default("grok-4.20-beta"),
+	GROK_VIDEO_ANALYSIS_MODEL: z.string().default("grok-4.20-beta"),
+	GROK_ASSET_ANALYSIS_MAX_CONCURRENCY: z.coerce
+		.number()
+		.int()
+		.min(1)
+		.max(12)
+		.default(4),
+	GROK_ASSET_ANALYSIS_PROMPT: z.string().optional(),
+	GROK_ANALYSIS_SYNTHESIS_PROMPT: z.string().optional(),
 });
 
 export type WebEnv = z.infer<typeof webEnvSchema>;

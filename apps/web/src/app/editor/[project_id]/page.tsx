@@ -17,6 +17,7 @@ import { MigrationDialog } from "@/components/editor/dialogs/migration-dialog";
 import { usePanelStore } from "@/stores/panel-store";
 import { usePasteMedia } from "@/hooks/use-paste-media";
 import { MobileGate } from "@/components/editor/mobile-gate";
+import { AIChatDock } from "@/components/editor/ai-chat-dock";
 
 export default function Editor() {
 	const params = useParams();
@@ -27,8 +28,9 @@ export default function Editor() {
 			<EditorProvider projectId={projectId}>
 				<div className="bg-background flex h-screen w-screen flex-col overflow-hidden">
 					<EditorHeader />
-					<div className="min-h-0 min-w-0 flex-1">
+					<div className="relative min-h-0 min-w-0 flex-1">
 						<EditorLayout />
+						<AIChatDock />
 					</div>
 					<Onboarding />
 					<MigrationDialog />

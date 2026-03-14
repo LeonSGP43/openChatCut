@@ -23,7 +23,7 @@ export type PlannedActionType = (typeof PLANNED_ACTION_ORDER)[number];
 
 export interface PlannedAction {
 	type: PlannedActionType;
-	source: "keyword-match";
+	source: "keyword-match" | "grok";
 	matchedKeywords: string[];
 }
 

@@ -1,0 +1,55 @@
+project_name: demo-reel-30s
+edit_instruction: Keep only the clearest product-reveal and result-focused moments.
+global_keywords:
+  - launch
+  - reveal
+  - wow
+  - problem
+  - result
+assets:
+  - id: interview_a
+    path: /absolute/path/to/interview-a.mp4
+    order: 1
+    weight: 1.2
+  - id: broll_product
+    path: /absolute/path/to/product-broll.mp4
+    order: 2
+    weight: 0.8
+output:
+  directory: ./output
+  filename: demo_reel_30s.mp4
+  write_otio: true
+  write_opencut_bundle: true
+  write_opencut_project: true
+  write_manifest: true
+  write_srt: true
+assembly:
+  target_duration_sec: 30
+  min_candidate_duration_sec: 1.5
+  max_candidate_duration_sec: 8.0
+  context_padding_sec: 0.25
+  duration_step_ms: 100
+  allow_extension_sec: 0.4
+  allow_trim_sec: 0.6
+scenes:
+  threshold: 27.0
+asr:
+  backend: faster_whisper
+  model_size: small
+  device: cpu
+  compute_type: int8
+  vad_filter: true
+  word_timestamps: true
+diarization:
+  enabled: false
+grok:
+  enabled: false
+  base_url: https://apileon.leonai.top
+  api_path: /grok/v1/responses
+  model: grok-4.1-thinking
+  max_concurrency: 4
+  max_candidates_per_asset: 24
+  timeout_sec: 90
+  max_output_tokens: 500
+  reasoning_effort: high
+  score_weight: 0.35

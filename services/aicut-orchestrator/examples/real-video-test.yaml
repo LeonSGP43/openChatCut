@@ -1,0 +1,52 @@
+project_name: real-video-test
+edit_instruction: Keep the strongest, clearest, and most visually useful moments for a short highlight cut.
+global_keywords:
+  - reveal
+  - result
+  - key moment
+assets:
+  - id: template_video_1
+    path: /Users/leongong/Downloads/视频测试/模板视频1.mp4
+    order: 1
+    weight: 1.0
+output:
+  directory: ./output/real-video-test
+  filename: template_video_1_cut.mp4
+  write_otio: true
+  write_opencut_bundle: true
+  write_opencut_project: true
+  write_manifest: true
+  write_srt: true
+assembly:
+  target_duration_sec: 8
+  target_tolerance_sec: 0.05
+  min_candidate_duration_sec: 1.2
+  max_candidate_duration_sec: 6.0
+  context_padding_sec: 0.2
+  duration_step_ms: 100
+  allow_extension_sec: 0.3
+  allow_trim_sec: 1.0
+scenes:
+  threshold: 27.0
+asr:
+  backend: faster_whisper
+  model_size: tiny
+  device: cpu
+  compute_type: int8
+  vad_filter: true
+  word_timestamps: true
+diarization:
+  enabled: false
+grok:
+  enabled: true
+  base_url: https://apileon.leonai.top
+  api_path: /grok/v1/responses
+  model: grok-4.1-thinking
+  cache_enabled: true
+  prompt_version: v1
+  max_concurrency: 3
+  max_candidates_per_asset: 8
+  timeout_sec: 90
+  max_output_tokens: 220
+  reasoning_effort: medium
+  score_weight: 0.35
